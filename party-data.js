@@ -1,42 +1,59 @@
-// party-data.js
-// 依存（先に読み込むこと）: typechart.js, data.js, champions_move_ability_data.js
-//   typechart.js                 -> TYPE_CHART, ALL_TYPES
-//   data.js                      -> POKEMON_LIST, ITEM_LIST
-//   champions_move_ability_data.js -> MOVE_LIST, ABILITY_LIST, POKEMON_MOVES_ABILITIES
-//
-// このファイルではデータを新しく作らず、上記の共通データを slug で結合するだけ。
+const BULBA_NAME_OVERRIDES = {
+  'farfetchd-galar': "Farfetch'd-Galar",
+  'sirfetchd': "Sirfetch'd",
+  'toxtricity': 'Toxtricity-Amped',
+  'toxtricity-low-key': 'Toxtricity-Low Key',
+  'indeedee': 'Indeedee-Male',
+  'basculegion': 'Basculegion-Male',
+  'aegislash': 'Aegislash-Shield',
+  'morpeko': 'Morpeko-Full',
+  'pyroar': 'Pyroar-Male',
+  // メガニャオニクスは性別違いも無印画像で統一
+  'meowstic-mega-male': 'Meowstic-Mega',
+  'meowstic-mega-female': 'Meowstic-Mega',
+  // パンプジンはサイズ違いも無印画像で統一
+  'gourgeist-small': 'Gourgeist',
+  'gourgeist-large': 'Gourgeist',
+  'gourgeist-super': 'Gourgeist',
+};
+const BULBA_REGIONS = ['galar', 'alola', 'paldea', 'hisui'];
 
-// ===== スプライトURL（全ポケモン共通の3段階フォールバック） =====
-// 段階0: Smogon Dex（Pokemon Showdown素材のミラー。xy世代＝メガも含む）のアニメGIF
-// 段階1: Pokemon Showdown本体の静止アイコン（同じslug命名規則の別ホスト。
-//         メガ/通常/リージョンフォームを問わず同じ規則で存在するため、
-//         「メガだけ推測URLを組み立てる」旧実装よりも一般性が高い）
-// 段階2: どちらも失敗したら壊れた画像アイコンのままにせず、プレースホルダーに差し替える
-const SPRITE_URL = slug => `https://www.smogon.com/dex/media/sprites/xy/${slug}.gif`;
-const SPRITE_FALLBACK_URL = slug => `https://play.pokemonshowdown.com/sprites/gen5/${slug}.png`;
+function formatBulbaSpriteName(slug) {
+  if (BULBA_NAME_OVERRIDES[slug]) return BULBA_NAME_OVERRIDES[slug];
 
-function handleSpriteError(imgEl, slug) {
-  const stage = Number(imgEl.dataset.fallbackStage || '0');
+  const parts = slug.split('-');
+  const cap = w => (w.length <= 1 ? w : w.charAt(0).toUpperCase() + w.slice(1));
 
-  if (stage === 0) {
-    imgEl.dataset.fallbackStage = '1';
-    imgEl.src = SPRITE_FALLBACK_URL(slug);
-    return;
+  // 性別違い: 末尾が female/male
+  const last = parts[parts.length - 1];
+  if (parts.length >= 2 && (last === 'female' || last === 'male')) {
+    const base = parts.slice(0, -1).map(cap).join('-');
+    return `${base}-${cap(last)}`;
   }
 
-  // 最終段階：これ以上リトライしない。ブラウザの「壊れた画像」アイコンを
-  // 出したままにせず、既存の np-sprite の「?」表示と同じ見た目のプレース
-  // ホルダーに差し替える。
-  imgEl.dataset.fallbackStage = '2';
-  imgEl.onerror = null;
-  imgEl.style.display = 'none';
-  const holder = imgEl.parentElement;
-  if (holder && !holder.querySelector('.sprite-placeholder')) {
-    const ph = document.createElement('div');
-    ph.className = 'sprite-placeholder';
-    ph.textContent = '?';
-    holder.appendChild(ph);
+  // Mr./Mrs. 系(ピリオド+スペース)
+  if (parts[0] === 'mr' || parts[0] === 'mrs') {
+    const title = parts[0] === 'mr' ? 'Mr.' : 'Mrs.';
+    const rest = parts.slice(2).map(cap);
+    return [`${title} ${cap(parts[1])}`, ...rest].join('-');
   }
+
+  // メガX/Y/Z(既存ロジックを流用)
+  if (parts.length >= 3 && parts[1] === 'mega' && ['x', 'y', 'z'].includes(parts[2])) {
+    return [cap(parts[0]), `Mega_${parts[2].toUpperCase()}`, ...parts.slice(3).map(cap)].join('-');
+  }
+
+  // 地方フォーム+品種名(地方名の後はスペース区切り)
+  if (parts.length >= 3 && BULBA_REGIONS.includes(parts[1])) {
+    return `${cap(parts[0])}-${cap(parts[1])} ${parts.slice(2).map(cap).join(' ')}`;
+  }
+
+  return parts.map(cap).join('-');
+}
+
+function BULBA_SPRITE_URL(dex, slug) {
+  const dexStr = String(dex).padStart(4, '0');
+  return `https://archives.bulbagarden.net/wiki/Special:FilePath/${dexStr}${formatBulbaSpriteName(slug)}.png`;
 }
 
 const POKESPRITE_BASE = 'https://raw.githubusercontent.com/msikma/pokesprite/master/items-outline';
@@ -51,17 +68,10 @@ const ITEM_SPRITE_URL = (slug, category) => {
   }
 };
 
-// 段階1フォールバック：同じpokespriteリポジトリの通常版（アウトラインなし）。
-// "items-outline" -> "items" に差し替えるだけで、サブフォルダ・ファイル名の
-// 規則は完全に同一（公式READMEのitems/evo-item/thunder-stone.png と
-// items-outline/evo-item/thunder-stone.png の対応表より確認済み）なので、
-// カテゴリ別のswitchをもう一度書く必要がなく道具・カテゴリを問わず効く。
 const POKESPRITE_BASE_FALLBACK = 'https://raw.githubusercontent.com/msikma/pokesprite/master/items';
 const ITEM_SPRITE_FALLBACK_URL = (slug, category) =>
   ITEM_SPRITE_URL(slug, category).replace(POKESPRITE_BASE, POKESPRITE_BASE_FALLBACK);
 
-// 段階2：どちらも失敗したら壊れた画像アイコンを出さず、SVGの「?」プレースホルダーに
-// 差し替える。img要素はそのまま(=既存のwidth/height/object-fit指定を使い回せる)。
 const ITEM_SPRITE_PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E" +
   "%3Crect width='32' height='32' rx='6' fill='%23262f45'/%3E" +
@@ -81,45 +91,49 @@ function handleItemSpriteError(imgEl, slug, category) {
   imgEl.src = ITEM_SPRITE_PLACEHOLDER;
 }
 
-// ===== タイプの表示色（typechart.jsにはデータが無いためUI用に別管理） =====
+// ===== タイプの表示色 =====
 const TYPE_COLORS = {
-  "ノーマル":"#9CA3AF","ほのお":"#F87171","みず":"#60A5FA","でんき":"#FBBF24","くさ":"#4ADE80",
-  "こおり":"#7DD3FC","かくとう":"#FB923C","どく":"#C084FC","じめん":"#D9B26F","ひこう":"#93C5FD",
-  "エスパー":"#F472B6","むし":"#A3E635","いわ":"#B8860B","ゴースト":"#8B5CF6","ドラゴン":"#818CF8",
-  "あく":"#6B7280","はがね":"#94A3B8","フェアリー":"#F9A8D4"
+  "ノーマル":"#a1a1a1","ほのお":"#d33a30","みず":"#4d78be","でんき":"#f1c43f","くさ":"#5d9d3a",
+  "こおり":"#79cced","かくとう":"#f08832","どく":"#6d4c97","じめん":"#89532a","ひこう":"#8eb8e6",
+  "エスパー":"#dc4d79","むし":"#95a235","いわ":"#adaa84","ゴースト":"#6c436e","ドラゴン":"#4d61a8",
+  "あく":"#4d3f3f","はがね":"#76a2ba","フェアリー":"#b880b8"
 };
+
+// ===== タイプの表示アイコン(SVGファイル名) =====
+const TYPE_ICON_FILE = {
+  "ノーマル":"normal","ほのお":"fire","みず":"water","でんき":"electric","くさ":"grass",
+  "こおり":"ice","かくとう":"fighting","どく":"poison","じめん":"ground","ひこう":"flying",
+  "エスパー":"psychic","むし":"bug","いわ":"rock","ゴースト":"ghost","ドラゴン":"dragon",
+  "あく":"dark","はがね":"steel","フェアリー":"fairy"
+};
+function TYPE_ICON_URL(type) {
+  return `assets/icons/${TYPE_ICON_FILE[type] || 'normal'}.svg`;
+}
 
 // ===== 技・特性の slug -> 表示名 索引 =====
 const ABILITY_NAME_BY_SLUG = Object.fromEntries(ABILITY_LIST.map(a => [a.slug, a.name]));
 const MOVE_BY_SLUG = Object.fromEntries(MOVE_LIST.map(m => [m.slug, m]));
-const CHAMPIONS_BY_SLUG = Object.fromEntries(POKEMON_MOVES_ABILITIES.map(p => [p.slug, p]));
-
-// ===== POKEMON_LIST(タイプ等) と POKEMON_MOVES_ABILITIES(種族値/特性/技) を slug でマージ =====
-// champions側にデータが無いポケモン(POKEMON_LIST側のみ)はパーティ編成の対象外（種族値が無いため）
-const PARTY_POKEMON_DB = POKEMON_LIST
-  .filter(p => CHAMPIONS_BY_SLUG[p.slug])
-  .map(p => {
-    const c = CHAMPIONS_BY_SLUG[p.slug];
-    return {
-      slug: p.slug,
-      name: p.name,
-      types: p.types,
-      base: {
-        hp:  c.base_stats.h,
-        atk: c.base_stats.a,
-        def: c.base_stats.b,
-        spa: c.base_stats.c,
-        spd: c.base_stats.d,
-        spe: c.base_stats.s,
-      },
-      abilities: c.abilities.map(a => ({
-        slug: a.slug,
-        name: ABILITY_NAME_BY_SLUG[a.slug] || a.slug,
-        hidden: a.hidden,
-      })),
-      moves: c.moves.map(slug => MOVE_BY_SLUG[slug]).filter(Boolean),
-    };
-  });
+// ===== POKEMON_MOVES_ABILITIES(name/types/種族値/特性/技を統合済み)から直接生成 =====
+const PARTY_POKEMON_DB = POKEMON_MOVES_ABILITIES.map(c => ({
+  slug: c.slug,
+  name: c.name,
+  dex: c.dex,
+  types: c.types,
+  base: {
+    hp:  c.base_stats.h,
+    atk: c.base_stats.a,
+    def: c.base_stats.b,
+    spa: c.base_stats.c,
+    spd: c.base_stats.d,
+    spe: c.base_stats.s,
+  },
+  abilities: c.abilities.map(a => ({
+    slug: a.slug,
+    name: ABILITY_NAME_BY_SLUG[a.slug] || a.slug,
+    hidden: a.hidden,
+  })),
+  moves: c.moves.map(slug => MOVE_BY_SLUG[slug]).filter(Boolean),
+}));
 
 const PARTY_POKEMON_BY_SLUG = Object.fromEntries(PARTY_POKEMON_DB.map(p => [p.slug, p]));
 

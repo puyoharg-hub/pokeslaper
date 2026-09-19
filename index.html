@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>パーティ編成</title>
+  <title>パーティをつくる</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -30,7 +30,13 @@
       </svg>
     </div>
 
-    <div class="party-side-panel" id="partySidePanel"></div>
+    <div class="party-side-panel" id="partySidePanel">
+      <button class="side-btn" id="presetSwitchBtn" data-preset="1">プリセット 1</button>
+      <button class="side-btn" id="saveBtn">保存</button>
+      <button class="side-btn" id="loadBtn">呼び出し</button>
+      <button class="side-btn" id="clearBtn">クリア</button>
+      <button class="side-btn" id="settingsBtn">設定</button>
+    </div>
 
   </div>
 
@@ -39,35 +45,36 @@
       <div class="modal-body">
         <div class="modal-grid">
 
-          <div class="area-a field-box">
+          <div class="area-a field-box compact-field">
             <div class="field-label">ポケモン名</div>
             <button class="name-picker-btn" id="namePickerBtn">
-              <div class="np-sprite" id="npSprite">?</div>
+              <div class="np-sprite" id="npSprite"></div>
               <div>
-                <div class="np-name placeholder" id="npName">タップして選択</div>
-                <div class="np-types" id="npTypes"></div>
+                <div class="np-name placeholder" id="npName"></div>
+                <div class="np-type-pills" id="npTypes"></div>
               </div>
             </button>
           </div>
 
-          <div class="area-b field-box">
+          <div class="area-b field-box compact-field">
             <div class="field-label">特性</div>
-            <input class="auto-input" id="abilityInput" list="abilityList" placeholder="特性を入力...">
-            <datalist id="abilityList"></datalist>
-            <div class="field-hint" id="abilityHint">ポケモンを選択すると候補が絞り込まれます</div>
+            <div class="ability-combo" id="abilityCombo">
+              <input class="auto-input" id="abilityInput" readonly autocomplete="off" disabled>
+              <div class="ability-panel" id="abilityPanel"></div>
+            </div>
           </div>
 
-          <div class="area-c field-box">
+          <div class="area-c field-box compact-field">
             <div class="field-label">道具</div>
             <button class="item-picker-btn" id="itemPickerBtn">
-              <div class="ip-icon" id="ipIcon">－</div>
-              <div class="ip-name placeholder" id="ipName">タップして選択</div>
+              <div class="ip-icon" id="ipIcon"></div>
+              <div class="ip-name placeholder" id="ipName"></div>
             </button>
           </div>
 
           <div class="area-d field-box">
             <div class="stat-block-header">
-              <span class="stat-block-title">能力値<span class="stat-block-desc">（各種ステータスを左クリックで上昇補正／右クリックで下降補正）</span>
+              <span class="stat-block-title">能力値<span class="stat-block-desc">※各種ステータスを左クリックで上昇補正／右クリックで下降補正<br>※能力Pの枠内をダブルクリックで極振り</span>
             </div>
             <table class="stat-edit-table">
               <thead>
@@ -76,36 +83,36 @@
                   <th>種族値</th>
                   <th>実数値</th>
                   <th>能力P</th>
-                  <th><span class="ev-summary" id="evSummary">能力P残り：<b id="evRemain">66</b><br>能力P合計：<b
-                        id="evTotal">0</b></span></th>
+                  <th><span class="ev-summary" id="evSummary">能力P残り：<b id="evRemain"></b><br>能力P合計：<b
+                        id="evTotal"></b></span></th>
                 </tr>
               </thead>
               <tbody id="statTableBody"></tbody>
             </table>
           </div>
 
-          <div class="area-f1 field-box">
-            <div class="field-label">技1</div>
+          <div class="area-f1 field-box compact-field">
             <button class="move-picker-btn" data-move-idx="0">
-              <span class="mp-name placeholder" id="mpName0">タップして選択</span>
+              <img class="mp-type-icon" id="mpIcon0" style="display:none;">
+              <span class="mp-name placeholder" id="mpName0"></span>
             </button>
           </div>
-          <div class="area-f2 field-box">
-            <div class="field-label">技2</div>
+          <div class="area-f2 field-box compact-field">
             <button class="move-picker-btn" data-move-idx="1">
-              <span class="mp-name placeholder" id="mpName1">タップして選択</span>
+              <img class="mp-type-icon" id="mpIcon1" style="display:none;">
+              <span class="mp-name placeholder" id="mpName1"></span>
             </button>
           </div>
-          <div class="area-f3 field-box">
-            <div class="field-label">技3</div>
+          <div class="area-f3 field-box compact-field">
             <button class="move-picker-btn" data-move-idx="2">
-              <span class="mp-name placeholder" id="mpName2">タップして選択</span>
+              <img class="mp-type-icon" id="mpIcon2" style="display:none;">
+              <span class="mp-name placeholder" id="mpName2"></span>
             </button>
           </div>
-          <div class="area-f4 field-box">
-            <div class="field-label">技4</div>
+          <div class="area-f4 field-box compact-field">
             <button class="move-picker-btn" data-move-idx="3">
-              <span class="mp-name placeholder" id="mpName3">タップして選択</span>
+              <img class="mp-type-icon" id="mpIcon3" style="display:none;">
+              <span class="mp-name placeholder" id="mpName3"></span>
             </button>
           </div>
 
@@ -117,9 +124,8 @@
   <div class="sub-overlay" id="pokemonOverlay">
     <div class="sub-panel">
       <div class="sub-panel-header">
-        <span class="sub-panel-title">ポケモン</span>
         <input type="text" class="sub-search-input" id="pokemonSearchInput" placeholder="ポケモン名で絞り込み...">
-        <button class="sub-panel-close" id="pokemonOverlayClose">&times;</button>
+
       </div>
       <div class="sub-grid" id="pokemonGrid"></div>
     </div>
@@ -128,9 +134,8 @@
   <div class="sub-overlay" id="itemOverlay">
     <div class="sub-panel">
       <div class="sub-panel-header">
-        <span class="sub-panel-title">道具</span>
         <input type="text" class="sub-search-input" id="itemSearchInput" placeholder="道具名で絞り込み...">
-        <button class="sub-panel-close" id="itemOverlayClose">&times;</button>
+
       </div>
       <div class="sub-grid" id="itemGrid"></div>
     </div>
@@ -139,17 +144,24 @@
   <div class="sub-overlay" id="moveOverlay">
     <div class="sub-panel">
       <div class="sub-panel-header">
-        <span class="sub-panel-title">技</span>
         <input type="text" class="sub-search-input" id="moveSearchInput" placeholder="技名で絞り込み...">
-        <button class="sub-panel-close" id="moveOverlayClose">&times;</button>
+
       </div>
       <div class="sub-grid" id="moveGrid"></div>
     </div>
   </div>
 
-  <script src="typechart.js"></script>
-  <script src="data.js"></script>
-  <script src="champions_move_ability_data.js"></script>
+  <div class="sub-overlay" id="loadOverlay">
+    <div class="sub-panel">
+      <div class="sub-panel-header">
+        <button class="sub-panel-clear" id="savedPartyClearBtn">クリア</button>
+      </div>
+      <div class="sub-grid" id="savedPartyGrid"></div>
+    </div>
+  </div>
+
+  <script src="item.js"></script>
+  <script src="champions-data.js"></script>
 
   <script src="party-data.js"></script>
   <script src="party-stats.js"></script>
