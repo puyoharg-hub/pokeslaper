@@ -38,6 +38,10 @@
   padding: 0;
 }
 
+html {
+  font-size: max(8px, min(calc(100vw / 80), calc(100vh / 34.9375)));
+}
+
 html,
 body {
   height: 100%;
@@ -320,7 +324,6 @@ body[data-preset="2"] {
   flex-shrink: 0;
 }
 
-
 .sf-stat-table {
   flex: 0 0 57.5%;
   min-width: 0;
@@ -422,7 +425,6 @@ body[data-preset="2"] {
   text-shadow: var(--pixel-outline2);
 }
 
-
 .sf-sprite {
   position: absolute;
   inset: 0;
@@ -464,7 +466,7 @@ body[data-preset="2"] {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: min(1000px, 100%);
+  width: min(62.5rem, 100%);
   display: flex;
   flex-direction: column;
   box-shadow: 0 24px 64px #000000aa;
@@ -480,16 +482,16 @@ body[data-preset="2"] {
 }
 
 .modal-grid {
-  width: 1000px;
-  height: 494px;
+  width: 62.5rem;
+  height: 30.875rem;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 0.5rem;
   background: var(--preset-bg3);
   display: grid;
-  grid-template-columns: 350px 630px;
-  column-gap: 4px;
+  grid-template-columns: 21.875rem 39.375rem;
+  column-gap: 0.25rem;
   grid-template-rows:
-    80px 4px 70px 4px 70px 4px 60px 2px 60px 2px 60px 2px 60px;
+    5rem 0.25rem 4.375rem 0.25rem 4.375rem 0.25rem 3.75rem 0.125rem 3.75rem 0.125rem 3.75rem 0.125rem 3.75rem;
   row-gap: 0;
 }
 
@@ -549,7 +551,6 @@ body[data-preset="2"] {
   margin-bottom: 0.34rem;
 }
 
-/* area-a〜f4 は index.html 側で compact-field クラスを付与済み */
 .compact-field.field-box {
   display: flex;
   align-items: center;
@@ -585,7 +586,6 @@ body[data-preset="2"] {
   gap: 0.5rem;
 }
 
-/* 名前・道具・技ピッカー共通(アイコン非表示 / 名前テキスト / プレースホルダー) */
 .ip-icon,
 .np-sprite {
   display: none;
@@ -639,7 +639,7 @@ body[data-preset="2"] {
 }
 
 .ability-combo.open .ability-panel {
-  max-height: 240px;
+  max-height: 15rem;
   opacity: 1;
 }
 
@@ -682,7 +682,6 @@ body[data-preset="2"] {
    9. Modal内 道具ピッカー
    ============================================================ */
 
-/* ボタン本体は技ピッカー(.move-picker-btn)と共通 */
 .item-picker-btn,
 .move-picker-btn {
   display: flex;
@@ -804,12 +803,12 @@ body[data-preset="2"] {
 .base-stat-box {
   font-size: 1.2rem;
   display: inline-block;
-  min-width: 32px;
+  min-width: 2rem;
 }
 
 .ev-input {
-  width: 45px;
-  height: 28px;
+  width: 2.8125rem;
+  height: 1.75rem;
   border: 1px solid var(--text);
   border-radius: 5px;
   color: var(--bg);
@@ -854,8 +853,8 @@ body[data-preset="2"] {
 }
 
 .ev-step-btns button {
-  width: 40px;
-  height: 38px;
+  width: 2.5rem;
+  height: 2.375rem;
   border-radius: 5px;
   border: none;
   background: #e8e8e8;
@@ -898,7 +897,7 @@ body[data-preset="2"] {
 .sub-panel {
   background: var(--preset-bg);
   border: 1px solid var(--border);
-  width: min(950px, 100%);
+  width: min(59.375rem, 100%);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -932,7 +931,7 @@ body[data-preset="2"] {
 
 .sub-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.5rem;
   overflow-y: auto;
 }
@@ -955,8 +954,8 @@ body[data-preset="2"] {
 }
 
 .sub-grid-sprite {
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 2px;
   background: color-mix(in srgb, var(--text) 10%, transparent);
   display: flex;
@@ -973,6 +972,15 @@ body[data-preset="2"] {
   object-fit: contain;
 }
 
+.sub-grid-sprite img,
+.sf-item-box img {
+  filter:
+    drop-shadow(1px 0 0 #fff)
+    drop-shadow(-1px 0 0 #fff)
+    drop-shadow(0 1px 0 #fff)
+    drop-shadow(0 -1px 0 #fff);
+}
+
 .sub-empty-msg {
   color: var(--preset-bg2);
   font-size: 0.75rem;
@@ -981,13 +989,39 @@ body[data-preset="2"] {
   grid-column: 1/-1;
 }
 
-/* 各モーダルの上書き */
 #pokemonGrid {
   padding-right: 0.5rem;
 }
 
 #itemGrid {
+  display: block;
   padding-right: 0.5rem;
+}
+
+.item-section + .item-section {
+  margin-top: 1rem;
+}
+
+.item-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.item-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.item-section-grid {
+  overflow: visible;
 }
 
 #moveGrid {
@@ -1038,8 +1072,8 @@ body[data-preset="2"] {
 }
 
 .saved-party-sprite {
-  width: 64px;
-  height: 64px;
+  width: 4rem;
+  height: 4rem;
   border-radius: 6px;
   background: color-mix(in srgb, var(--text) 10%, transparent);
   display: flex;
@@ -1055,7 +1089,7 @@ body[data-preset="2"] {
 }
 
 .saved-party-memo {
-  width: 400px;
+  width: 25rem;
   flex-shrink: 0;
   overflow: hidden;
   background: var(--preset-bg3);
@@ -1081,7 +1115,7 @@ body[data-preset="2"] {
     transform: translateX(0);
   }
   90%, 100% {
-    transform: translateX(calc(-100% + 400px));
+    transform: translateX(calc(-100% + 25rem));
   }
 }
 
@@ -1097,15 +1131,4 @@ body[data-preset="2"] {
 
 .saved-party-delete:hover {
   color: var(--preset-bg2);
-}
-
-/* ============================================================
-   14. メディアクエリ
-   ============================================================ */
-
-@media (max-width: 760px) {
-  .modal-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas: "a" "b" "c" "d" "f1" "f2" "f3" "f4";
-  }
 }

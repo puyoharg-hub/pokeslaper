@@ -56,37 +56,19 @@ function BULBA_SPRITE_URL(dex, slug) {
   return `https://archives.bulbagarden.net/wiki/Special:FilePath/${dexStr}${formatBulbaSpriteName(slug)}.png`;
 }
 
-const POKESPRITE_BASE = 'https://raw.githubusercontent.com/msikma/pokesprite/master/items-outline';
-const ITEM_SPRITE_URL = (slug, category) => {
-  switch (category) {
-    case 'berry':      return `${POKESPRITE_BASE}/berry/${slug.replace('-berry', '')}.png`;
-    case 'plate':      return `${POKESPRITE_BASE}/plate/${slug.replace('-plate', '')}.png`;
-    case 'z-crystal':  return `${POKESPRITE_BASE}/z-crystals/${slug}--held.png`;
-    case 'mega-stone': return `${POKESPRITE_BASE}/mega-stone/${slug}.png`;
-    case 'evo-item':   return `${POKESPRITE_BASE}/evo-item/${slug}.png`;
-    default:           return `${POKESPRITE_BASE}/hold-item/${slug}.png`;
-  }
-};
-
-const POKESPRITE_BASE_FALLBACK = 'https://raw.githubusercontent.com/msikma/pokesprite/master/items';
-const ITEM_SPRITE_FALLBACK_URL = (slug, category) =>
-  ITEM_SPRITE_URL(slug, category).replace(POKESPRITE_BASE, POKESPRITE_BASE_FALLBACK);
+// 道具アイコンは PokeAPI/sprites から取得する。
+// Zクリスタルのみ、ファイル名に --held が付く。
+const ITEM_SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items';
+const ITEM_SPRITE_URL = (slug, category) =>
+  `${ITEM_SPRITE_BASE}/${slug}${category === 'z-crystal' ? '--held' : ''}.png`;
 
 const ITEM_SPRITE_PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E" +
   "%3Crect width='32' height='32' rx='6' fill='%23262f45'/%3E" +
   "%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='%2364748b' text-anchor='middle'%3E%3F%3C/text%3E%3C/svg%3E";
 
-function handleItemSpriteError(imgEl, slug, category) {
-  const stage = Number(imgEl.dataset.fallbackStage || '0');
-
-  if (stage === 0) {
-    imgEl.dataset.fallbackStage = '1';
-    imgEl.src = ITEM_SPRITE_FALLBACK_URL(slug, category);
-    return;
-  }
-
-  imgEl.dataset.fallbackStage = '2';
+// 画像取得に失敗したらプレースホルダーに差し替える（フォールバック先が無くなったので1段のみ）
+function handleItemSpriteError(imgEl) {
   imgEl.onerror = null;
   imgEl.src = ITEM_SPRITE_PLACEHOLDER;
 }

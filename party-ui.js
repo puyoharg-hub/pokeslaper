@@ -429,17 +429,84 @@ function openPokemonOverlay() {
 function renderItemGrid(filterText) {
   const grid = document.getElementById('itemGrid');
   const q = (filterText || '').trim();
-  const list = q ? ITEM_LIST.filter(it => it.name.includes(q)) : ITEM_LIST;
+  const HIDDEN_ITEM_CATEGORIES = ['plate', 'z-crystal'];
+  const VISIBLE_BERRY_NAMES = ['カゴのみ', 'ラムのみ', 'オボンのみ', '半減きのみ'];
+  const HIDDEN_ITEM_NAMES = [
+    'こんごうだま',
+    'あいいろのたま',
+    'ブレイズカセット',
+    'フリーズカセット',
+    'あかいいと',
+    'アクアカセット',
+    'かるいし',
+    'はっきんだま',
+    'ラッキーパンチ',
+    'しらたま',
+    'メタルパウダー',
+    'べにいろのたま',
+    'さびたたて',
+    'さびたつるぎ',
+    'イナズマカセット',
+    'こころのしずく',
+    'ふといほね',
+    'こだわりハチマキ',
+    'こだわりメガネ',
+    'くろいヘドロ',
+    'あつぞこブーツ',
+    'かえんだま',
+    'からぶりほけん',
+    'かわらずのいし',
+    'きゅうこん',
+    'きよめのおふだ',
+    'くっつきバリ',
+    'こうこうのしっぽ',
+    'しんかのきせき',
+    'じゃくてんほけん',
+    'じゅうでんち',
+    'スピードパウダー',
+    'だっしゅつパック',
+    'とつげきチョッキ',
+    'どくどくだま',
+    'ねばりのかぎづめ',
+    'ねらいのまと',
+    'のどスプレー',
+    'ばんのうがさ',
+    'ひかりごけ',
+    'びびりだま',
+    'パワフルハーブ',
+    'ぼうごパッド',
+    'ぼうじんゴーグル',
+    'ゆきだま',
+    'ルームサービス'
+  ];
+  const visibleItems = ITEM_LIST.filter(it =>
+    !HIDDEN_ITEM_CATEGORIES.includes(it.category) &&
+    !HIDDEN_ITEM_NAMES.includes(it.name) &&
+    (it.category !== 'berry' || VISIBLE_BERRY_NAMES.includes(it.name))
+  );
+  const list = q ? visibleItems.filter(it => it.name.includes(q)) : visibleItems;
 
   if (list.length === 0) {
     grid.innerHTML = `<div class="sub-empty-msg">該当する道具がありません</div>`;
     return;
   }
-  grid.innerHTML = list.map(it => `
-    <div class="sub-grid-item" data-item="${it.name}">
-      <div class="sub-grid-sprite"><img src="${ITEM_SPRITE_URL(it.slug, it.category)}" alt="${it.name}" loading="lazy" onerror="handleItemSpriteError(this,'${it.slug}','${it.category}')"></div>
-      <div class="sgi-name">${it.name}</div>
-    </div>
+  const sections = new Map();
+  list.forEach(it => {
+    const key = it.section || 'その他';
+    if (!sections.has(key)) sections.set(key, []);
+    sections.get(key).push(it);
+  });
+  grid.innerHTML = [...sections].map(([sectionName, items]) => `
+    <section class="item-section">
+      <h3 class="item-section-title">${sectionName}</h3>
+      <div class="sub-grid item-section-grid">
+        ${items.map(it => `
+        <div class="sub-grid-item" data-item="${it.name}">
+          <div class="sub-grid-sprite"><img src="${ITEM_SPRITE_URL(it.slug, it.category)}" alt="${it.name}" loading="lazy" onerror="handleItemSpriteError(this,'${it.slug}','${it.category}')"></div>
+          <div class="sgi-name">${it.name}</div>
+        </div>`).join('')}
+      </div>
+    </section>
   `).join('');
   grid.querySelectorAll('.sub-grid-item').forEach(el => {
     el.addEventListener('click', () => {
