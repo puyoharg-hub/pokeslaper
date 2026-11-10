@@ -388,10 +388,120 @@ function renderStatTable() {
   });
 }
 
+const ROMAJI_MAP = (() => {
+  const m = { '-': 'ー' };
+  const V = ['a', 'i', 'u', 'e', 'o'];
+  const rows = {
+    '': 'アイウエオ', k: 'カキクケコ', s: 'サシスセソ', t: 'タチツテト', n: 'ナニヌネノ',
+    h: 'ハヒフヘホ', m: 'マミムメモ', r: 'ラリルレロ', g: 'ガギグゲゴ', z: 'ザジズゼゾ',
+    d: 'ダヂヅデド', b: 'バビブベボ', p: 'パピプペポ'
+  };
+  Object.entries(rows).forEach(([c, kana]) => V.forEach((v, i) => { m[c + v] = kana[i]; }));
+  m.ya = 'ヤ'; m.yu = 'ユ'; m.yo = 'ヨ'; m.wa = 'ワ'; m.wo = 'ヲ'; m.wi = 'ウィ'; m.we = 'ウェ';
+  m.xa = 'ァ'; m.xi = 'ィ'; m.xu = 'ゥ'; m.xe = 'ェ'; m.xo = 'ォ';
+  m.la = 'ァ'; m.li = 'ィ'; m.lu = 'ゥ'; m.le = 'ェ'; m.lo = 'ォ';
+  m.xya = 'ャ'; m.xyu = 'ュ'; m.xyo = 'ョ'; m.lya = 'ャ'; m.lyu = 'ュ'; m.lyo = 'ョ';
+  m.xtu = 'ッ'; m.ltu = 'ッ'; m.xtsu = 'ッ'; m.ltsu = 'ッ'; m.xwa = 'ヮ';
+  const small = { ya: 'ャ', yu: 'ュ', yo: 'ョ' };
+  const yoon = { k: 'キ', g: 'ギ', s: 'シ', z: 'ジ', t: 'チ', d: 'ヂ', n: 'ニ', h: 'ヒ', b: 'ビ', p: 'ピ', m: 'ミ', r: 'リ' };
+  Object.entries(yoon).forEach(([c, base]) => Object.entries(small).forEach(([y, s]) => { m[c + y] = base + s; }));
+  const sp = {
+    shi: 'シ', sha: 'シャ', shu: 'シュ', she: 'シェ', sho: 'ショ',
+    chi: 'チ', cha: 'チャ', chu: 'チュ', che: 'チェ', cho: 'チョ',
+    cya: 'チャ', cyu: 'チュ', cyo: 'チョ',
+    tsu: 'ツ', fu: 'フ', ji: 'ジ', ja: 'ジャ', ju: 'ジュ', je: 'ジェ', jo: 'ジョ',
+    jya: 'ジャ', jyu: 'ジュ', jyo: 'ジョ', zya: 'ジャ', zyu: 'ジュ', zyo: 'ジョ',
+    fa: 'ファ', fi: 'フィ', fe: 'フェ', fo: 'フォ',
+    va: 'ヴァ', vi: 'ヴィ', vu: 'ヴ', ve: 'ヴェ', vo: 'ヴォ',
+    thi: 'ティ', dhi: 'ディ', twu: 'トゥ', dwu: 'ドゥ',
+    si: 'シ', ti: 'チ', tu: 'ツ', hu: 'フ', zi: 'ジ', di: 'ヂ', du: 'ヅ'
+  };
+  Object.assign(m, sp);
+  return m;
+})();
+
+const ROMAJI_VOWELS = 'aiueo';
+
+function romajiToKana(src) {
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (!/[a-z\-]/.test(c)) {
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (c === 'n') {
+      const next = src[i + 1];
+      if (next === 'n' && ROMAJI_MAP[src.slice(i + 1, i + 3)] === undefined && !'aiueoy'.includes(src[i + 2] || '')) {
+        out += 'ン';
+        i += 2;
+        continue;
+      }
+      if (next === 'n' && 'aiueoy'.includes(src[i + 2] || '')) {
+        out += 'ン';
+        i += 1;
+        continue;
+      }
+      if (next && !'aiueoy'.includes(next) && /[a-z]/.test(next)) {
+        out += 'ン';
+        i += 1;
+        continue;
+      }
+      if (next === "'") {
+        out += 'ン';
+        i += 2;
+        continue;
+      }
+    }
+    if (src[i + 1] === c && /[bcdfghjklmpqrstvwxyz]/.test(c)) {
+      out += 'ッ';
+      i += 1;
+      continue;
+    }
+    let hit = false;
+    for (let len = 4; len >= 1; len--) {
+      const kana = ROMAJI_MAP[src.slice(i, i + len)];
+      if (kana !== undefined) {
+        out += kana;
+        i += len;
+        hit = true;
+        break;
+      }
+    }
+    if (!hit) {
+      out += c;
+      i += 1;
+    }
+  }
+  return out;
+}
+
+function hiraganaToKatakana(str) {
+  return str.replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+}
+
+function normalizeName(str) {
+  return hiraganaToKatakana(String(str).normalize('NFKC').toLowerCase());
+}
+
+function buildSearchMatcher(filterText) {
+  const raw = hiraganaToKatakana(String(filterText || '').normalize('NFKC').toLowerCase()).trim();
+  if (!raw) return null;
+  const converted = romajiToKana(raw);
+  const settled = converted.replace(/[a-z]+$/, '');
+  if (!settled && converted) return null;
+  return name => {
+    const n = normalizeName(name);
+    return n.includes(converted) || (settled !== '' && n.includes(settled));
+  };
+}
+
 function renderPokemonGrid(filterText) {
   const grid = document.getElementById('pokemonGrid');
-  const q = (filterText || '').trim();
-  const list = q ? PARTY_POKEMON_DB.filter(p => p.name.includes(q)) : PARTY_POKEMON_DB;
+  const matcher = buildSearchMatcher(filterText);
+  const list = matcher ? PARTY_POKEMON_DB.filter(p => matcher(p.name)) : PARTY_POKEMON_DB;
 
   if (list.length === 0) {
     grid.innerHTML = `<div class="sub-empty-msg">該当するポケモンがいません</div>`;
@@ -428,7 +538,7 @@ function openPokemonOverlay() {
 
 function renderItemGrid(filterText) {
   const grid = document.getElementById('itemGrid');
-  const q = (filterText || '').trim();
+  const matcher = buildSearchMatcher(filterText);
   const HIDDEN_ITEM_CATEGORIES = ['plate', 'z-crystal'];
   const VISIBLE_BERRY_NAMES = ['カゴのみ', 'ラムのみ', 'オボンのみ', '半減きのみ'];
   const HIDDEN_ITEM_NAMES = [
@@ -484,7 +594,7 @@ function renderItemGrid(filterText) {
     !HIDDEN_ITEM_NAMES.includes(it.name) &&
     (it.category !== 'berry' || VISIBLE_BERRY_NAMES.includes(it.name))
   );
-  const list = q ? visibleItems.filter(it => it.name.includes(q)) : visibleItems;
+  const list = matcher ? visibleItems.filter(it => matcher(it.name)) : visibleItems;
 
   if (list.length === 0) {
     grid.innerHTML = `<div class="sub-empty-msg">該当する道具がありません</div>`;
@@ -532,10 +642,10 @@ const TYPE_ORDER = [
 
 function renderMoveGrid(filterText) {
   const grid = document.getElementById('moveGrid');
-  const q = (filterText || '').trim();
+  const matcher = buildSearchMatcher(filterText);
   const p = currentDraftPokemon();
   const source = p ? p.moves : MOVE_LIST;
-  const filtered = q ? source.filter(m => m.name.includes(q)) : source;
+  const filtered = matcher ? source.filter(m => matcher(m.name)) : source;
   const list = [...filtered].sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type));
 
   if (list.length === 0) {
